@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaniTrust | Secure Grievance Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <nav>
+        <div class="logo-container">
+            <div class="logo-img glass"
+                style="display: flex; align-items: center; justify-content: center; background: var(--accent-color); color: #000;">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <span class="logo-text">VaniTrust</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Report</a>
+            <a href="/dashboard">Track</a>
+            <a href="/admin">Official Portal</a>
+        </div>
+    </nav>
+
+    <header class="hero fade-in">
+        <h1>Your Voice, <br><span style="color: var(--accent-color)">Secured by Trust.</span></h1>
+        <p>A safe, anonymous way for communities to report issues. No paperwork, no fear—just your voice and a
+            transparent trail of action.</p>
+    </header>
+
+    <main>
+        <div class="action-grid fade-in">
+            <div class="card glass" onclick="showSection('report-voice')">
+                <i class="fas fa-microphone"></i>
+                <h3>Voice Report</h3>
+                <p>Speak your complaint. Best for low-literacy or quick reporting. Completely anonymous.</p>
+            </div>
+            <div class="card glass" onclick="showSection('report-text')">
+                <i class="fas fa-pen-nib"></i>
+                <h3>Text Report</h3>
+                <p>Type your complaint. Add details or attach proxy evidence securely.</p>
+            </div>
+            <div class="card glass" onclick="window.location.href='/dashboard'">
+                <i class="fas fa-search"></i>
+                <h3>Track Status</h3>
+                <p>Check the progress of your report using your unique secure ID.</p>
+            </div>
+        </div>
+
+        <section id="report-form" class="form-container glass fade-in" style="display: none;">
+            <h2 id="form-title" style="text-align: center; margin-bottom: 1rem;">Submit Grievance</h2>
+            <div id="voice-input" style="text-align: center; display: none;">
+                <button id="record-btn" class="voice-btn">
+                    <i class="fas fa-microphone fa-2x"></i>
+                </button>
+                <p id="record-status">Click to start recording</p>
+            </div>
+            <div id="text-input" style="display: none;">
+                <textarea id="complaint-text" rows="5" placeholder="Describe the issue here..."></textarea>
+            </div>
+            <button class="submit-btn" onclick="submitReport()">SUBMIT SECURELY</button>
+            <button class="submit-btn"
+                style="background: transparent; border: 1px solid var(--glass-border); color: white; margin-top: 0.5rem;"
+                onclick="hideForm()">CANCEL</button>
+        </section>
+    </main>
+
+    <script>
+        let currentType = '';
+
+        function showSection(type) {
+            document.getElementById('report-form').style.display = 'block';
+            document.querySelector('.action-grid').style.display = 'none';
+            document.querySelector('.hero').style.display = 'none';
+
+            if (type === 'report-voice') {
+                document.getElementById('voice-input').style.display = 'block';
+                document.getElementById('text-input').style.display = 'none';
+                document.getElementById('form-title').innerText = 'Speak Your Grievance';
+                currentType = 'voice';
+            } else {
+                document.getElementById('voice-input').style.display = 'none';
+                document.getElementById('text-input').style.display = 'block';
+                document.getElementById('form-title').innerText = 'Describe the Grievance';
+                currentType = 'text';
+            }
+        }
+
+        function hideForm() {
+            document.getElementById('report-form').style.display = 'none';
+            document.querySelector('.action-grid').style.display = 'grid';
+            document.querySelector('.hero').style.display = 'block';
+        }
+
+        let isRecording = false;
+        const recordBtn = document.getElementById('record-btn');
+        const recordStatus = document.getElementById('record-status');
+
+        recordBtn.onclick = () => {
+            isRecording = !isRecording;
+            if (isRecording) {
+                recordBtn.classList.add('recording');
+                recordStatus.innerText = 'Listening... Click to stop';
+            } else {
+                recordBtn.classList.remove('recording');
+                recordStatus.innerText = 'Recording captured. Ready to submit.';
+            }
+        };
+
+        async function submitReport() {
+            const content = currentType === 'voice' ? 'Voice Recording (Simulated)' : document.getElementById('complaint-text').value;
+            if (!content && currentType === 'text') return alert('Please enter some text');
+
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('type', currentType);
+            formData.append('is_voice', currentType === 'voice');
+
+            const response = await fetch('/api/submit', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Success! Your secure Tracking ID is: ' + data.id + '\nKeep this ID safe to track progress.');
+                window.location.href = '/dashboard';
+            }
+        }
+    </script>
+</body>
+
+</html>

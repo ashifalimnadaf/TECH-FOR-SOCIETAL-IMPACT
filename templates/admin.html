@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority Portal | VaniTrust</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body style="background-image: none; background-color: #050610;">
+    <nav>
+        <div class="logo-container">
+            <div class="logo-img glass" style="display: flex; align-items: center; justify-content: center; background: var(--accent-color); color: #000;">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <span class="logo-text">VaniTrust <small style="font-size: 0.6rem; color: var(--accent-color)">OFFICIAL</small></span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Exit Portal</a>
+        </div>
+    </nav>
+
+    <div class="hero fade-in" style="padding: 2rem 5%; text-align: left; max-width: 1200px;">
+        <h1 style="font-size: 2rem;">Executive <span style="color: var(--accent-color)">Insights</span></h1>
+        <p>Intelligent overview of community grievances. AI-powered summarization for faster decision making.</p>
+    </div>
+
+    <main style="padding: 0 5%; max-width: 1200px; margin: 0 auto;">
+        <div class="glass" style="padding: 2rem; margin-bottom: 2rem; border-left: 5px solid var(--accent-color);">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1rem;">
+                <i class="fas fa-robot fa-2x" style="color: var(--accent-color)"></i>
+                <h3 style="margin:0">AI Report Generator</h3>
+            </div>
+            <p id="ai-summary-text" style="color: var(--text-primary); font-size: 1.2rem; line-height: 1.6; font-style: italic;">
+                Click below to analyze current trends and grievances...
+            </p>
+            <button class="submit-btn" style="width: auto; padding: 10px 25px; margin-top: 1rem;" onclick="generateSummary()">
+                GENERATE SUMMARY
+            </button>
+        </div>
+
+        <h3 style="margin-bottom: 1.5rem; color: var(--text-secondary)">Active Backlog</h3>
+        <div id="admin-grievance-list">
+            <!-- Loaded via JS -->
+        </div>
+    </main>
+
+    <script>
+        async function generateSummary() {
+            const btn = document.querySelector('button');
+            btn.innerText = 'ANALYZING...';
+            const response = await fetch('/api/summarize');
+            const data = await response.json();
+            document.getElementById('ai-summary-text').innerText = data.summary;
+            btn.innerText = 'REFRESH SUMMARY';
+        }
+
+        async function loadAdminList() {
+            const response = await fetch('/api/grievances');
+            const grievances = await response.json();
+            const container = document.getElementById('admin-grievance-list');
+            container.innerHTML = '';
+
+            grievances.reverse().forEach(g => {
+                const item = document.createElement('div');
+                item.className = 'grievance-item glass';
+                item.style.marginBottom = '10px';
+                
+                const verifiedIcon = g.verified ? '<i class="fas fa-check-circle" title="Highly Verified" style="color: var(--accent-color)"></i>' : '';
+
+                item.innerHTML = `
+                    <div style="flex: 1;">
+                        <span class="id-tag">#${g.id}</span> ${verifiedIcon}
+                        <p style="margin: 5px 0;">${g.content}</p>
+                        <small style="color: var(--text-secondary)">Source: ${g.type.toUpperCase()} | ${g.timestamp}</small>
+                    </div>
+                    <div>
+                        <select class="glass" style="padding: 5px; background: #111; color: white;" onchange="updateStatus('${g.id}', this.value)">
+                            <option value="Pending" ${g.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="In Progress" ${g.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Resolved" ${g.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                        </select>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Add dummy function for status update (could be implemented in API)
+        function updateStatus(id, status) {
+            console.log(`Updating ${id} to ${status}`);
+            alert('Status updated for ' + id + '. Blockchain log recorded.');
+        }
+
+        loadAdminList();
+    </script>
+</body>
+</html>

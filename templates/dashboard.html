@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeVoice | Citizen Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --tab-bg: #f1f5f9;
+            --tab-active: #4f46e5;
+            --accent-pink: #ec4899;
+            --accent-yellow: #eab308;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            background: white;
+            padding: 8px;
+            border-radius: 24px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+
+        .tab {
+            padding: 12px 28px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .tab.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .tab:hover:not(.active) {
+            background: #f8fafc;
+            color: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tab 1: Reporting */
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .media-option {
+            background: white;
+            border: 2px solid #f1f5f9;
+            padding: 30px 20px;
+            border-radius: 28px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .media-option:hover {
+            border-color: #6366f1;
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        }
+
+        .media-option i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .media-option p {
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .anon-toggle {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #ecfdf5;
+            padding: 20px 30px;
+            border-radius: 24px;
+            border: 2px solid #d1fae5;
+            animation: fadeIn 1s ease;
+        }
+
+        /* Tab 2: Community */
+        .search-container {
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 18px 60px;
+            border-radius: 24px;
+            background: white;
+            border: 2px solid #f1f5f9;
+            color: #1e293b;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            transition: 0.3s;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+
+        .community-card {
+            background: white;
+            border: 2px solid #f1f5f9;
+            border-radius: 32px;
+            padding: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: 0.4s;
+        }
+
+        .community-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            border-color: #e2e8f0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vouch-btn {
+            background: linear-gradient(90deg, #ec4899, #d946ef);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 15px rgba(236, 72, 153, 0.2);
+        }
+
+        .vouch-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 25px rgba(236, 72, 153, 0.3);
+        }
+
+        /* Tab 3: Status */
+        .status-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 20px;
+        }
+
+        .status-row {
+            background: white;
+            transition: 0.4s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            border-radius: 24px;
+        }
+
+        .status-row:hover {
+            transform: translateX(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .status-row td {
+            padding: 25px;
+        }
+
+        .status-row td:first-child { border-radius: 24px 0 0 24px; border-left: 2px solid #f1f5f9; border-top: 2px solid #f1f5f9; border-bottom: 2px solid #f1f5f9; }
+        .status-row td:last-child { border-radius: 0 24px 24px 0; border-right: 2px solid #f1f5f9; border-top: 2px solid #f1f5f9; border-bottom: 2px solid #f1f5f9; }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 30%;
+            border-radius: 10px;
+        }
+
+        .recording-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .vouch-count {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo-container">
+            <div class="logo-img glass" style="display: flex; align-items: center; justify-content: center; background: var(--accent-color); color: #000;">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <span class="logo-text">SafeVoice</span>
+        </div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">
+                <i class="fas fa-plus-circle"></i> Report Problem
+            </div>
+            <div class="tab" onclick="switchTab(1)">
+                <i class="fas fa-users"></i> Community Report
+            </div>
+            <div class="tab" onclick="switchTab(2)">
+                <i class="fas fa-tasks"></i> Report Status
+            </div>
+        </div>
+
+        <!-- Tab 1: Report Problem -->
+        <div id="tab-report" class="tab-content active">
+            <div class="anon-toggle">
+                <i class="fas fa-user-secret fa-2x" style="color: var(--success)"></i>
+                <div>
+                    <h3 style="color: var(--success)">Anonymous Mode Active</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">Your identity is hidden from authorities. Only the report content is shared.</p>
+                </div>
+            </div>
+
+            <div class="report-grid">
+                <div class="media-option" onclick="handleMedia('voice')">
+                    <i class="fas fa-microphone"></i>
+                    <p>Voice Record</p>
+                </div>
+                <div class="media-option" onclick="handleMedia('image')">
+                    <i class="fas fa-camera"></i>
+                    <p>Capture Image</p>
+                </div>
+                <div class="media-option" onclick="handleMedia('video')">
+                    <i class="fas fa-video"></i>
+                    <p>Record Video</p>
+                </div>
+                <div class="media-option" onclick="handleMedia('file')">
+                    <i class="fas fa-file-upload"></i>
+                    <p>Attach File</p>
+                </div>
+            </div>
+
+            <div class="glass" style="padding: 30px;">
+                <h3>Describe the issue</h3>
+                <textarea id="complaint-desc" rows="6" placeholder="Type your complaint here..."></textarea>
+                <div id="vouch-suggestion" style="margin-top: 15px; display: none; background: rgba(255,0,255,0.1); padding: 15px; border-radius: 10px; border: 1px solid var(--accent-pink);">
+                    <p><i class="fas fa-lightbulb"></i> Similar issue found: <strong>"Pothole on Main St"</strong></p>
+                    <button class="vouch-btn" style="margin-top: 10px;" onclick="vouchCurrent()"><i class="fas fa-heart"></i> Vouch instead of reporting new</button>
+                </div>
+                <button class="submit-btn" style="height: 60px; font-size: 1.1rem;" onclick="submitFinalReport()">
+                    <i class="fas fa-paper-plane"></i> SUBMIT COMPLAINT
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab 2: Community Report -->
+        <div id="tab-community" class="tab-content">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-bar" placeholder="Search for reports in your area..." onkeyup="filterReports(this.value)">
+            </div>
+
+            <div id="community-list">
+                <!-- Sample Reports -->
+                <div class="community-card">
+                    <div class="card-header">
+                        <span class="badge badge-pending">PENDING</span>
+                        <span class="id-tag">#SV-8293</span>
+                    </div>
+                    <h3>Broken Street Light in Ward 5</h3>
+                    <p>The street light near the public park has been non-functional for 2 weeks. It's unsafe for children and elderly at night.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.9rem; color: var(--text-secondary)"><i class="fas fa-clock"></i> 2 hours ago</span>
+                        <button class="vouch-btn" onclick="vouchReport('SV-8293', this)">
+                            <i class="fas fa-heart"></i> Vouch <span class="vouch-count">12</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="community-card">
+                    <div class="card-header">
+                        <span class="badge badge-verified">IN PROGRESS</span>
+                        <span class="id-tag">#SV-7142</span>
+                    </div>
+                    <h3>Garbage Overflow near School</h3>
+                    <p>Waste has not been collected for 4 days. Strong odor is affecting students.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.9rem; color: var(--text-secondary)"><i class="fas fa-clock"></i> 5 hours ago</span>
+                        <button class="vouch-btn" onclick="vouchReport('SV-7142', this)">
+                            <i class="fas fa-heart"></i> Vouch <span class="vouch-count">45</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Report Status -->
+        <div id="tab-status" class="tab-content">
+            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                <h2>Your Submissions</h2>
+            </div>
+            
+            <table class="status-table">
+                <tr class="status-row">
+                    <td>
+                        <div class="id-tag">#SV-9012</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Pothole Repair</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-pending">PENDING</span>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 20%;"></div></div>
+                    </td>
+                    <td><span style="color: var(--text-secondary)">Submitted May 2, 2026</span></td>
+                </tr>
+                <tr class="status-row">
+                    <td>
+                        <div class="id-tag">#SV-8821</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Water Supply Leak</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-verified" style="background: var(--tab-active)">IN PROGRESS</span>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 65%;"></div></div>
+                    </td>
+                    <td><span style="color: var(--text-secondary)">Submitted Apr 30, 2026</span></td>
+                </tr>
+                <tr class="status-row">
+                    <td>
+                        <div class="id-tag">#SV-7654</div>
+                        <div style="font-weight: bold; margin-top: 5px;">Park Bench Broken</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-resolved">RESOLVED</span>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 100%; background: var(--success)"></div></div>
+                    </td>
+                    <td><span style="color: var(--text-secondary)">Resolved Apr 28, 2026</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recording UI Overlay -->
+    <div id="recording-overlay" class="recording-overlay">
+        <div class="voice-btn recording" id="active-record-btn">
+            <i class="fas fa-microphone fa-3x"></i>
+        </div>
+        <h2 id="recording-text">Recording...</h2>
+        <p>Speak clearly. Your voice is encrypted.</p>
+        <button class="submit-btn" style="width: 200px;" onclick="stopRecording()">STOP & SAVE</button>
+    </div>
+
+    <script>
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            tabs[index].classList.add('active');
+            contents[index].classList.add('active');
+        }
+
+        function handleMedia(type) {
+            if(type === 'voice') {
+                document.getElementById('recording-overlay').style.display = 'flex';
+            } else {
+                alert('Opening ' + type + ' interface...');
+            }
+        }
+
+        function stopRecording() {
+            document.getElementById('recording-overlay').style.display = 'none';
+            document.getElementById('complaint-desc').value = "[Audio Recording Attached]";
+        }
+
+        function vouchReport(id, btn) {
+            const countEl = btn.querySelector('.vouch-count');
+            let count = parseInt(countEl.innerText);
+            countEl.innerText = count + 1;
+            btn.style.opacity = '0.7';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-check"></i> Vouched';
+        }
+
+        function submitFinalReport() {
+            const desc = document.getElementById('complaint-desc').value;
+            if(!desc) return alert('Please provide some details or media');
+            
+            alert('Grievance Submitted Successfully! \nYour tracking ID: #SV-' + Math.floor(1000 + Math.random() * 9000));
+            switchTab(2);
+        }
+
+        // Simulating search and vouch suggestion
+        document.getElementById('complaint-desc').addEventListener('input', function(e) {
+            if(e.target.value.toLowerCase().includes('pothole')) {
+                document.getElementById('vouch-suggestion').style.display = 'block';
+            } else {
+                document.getElementById('vouch-suggestion').style.display = 'none';
+            }
+        });
+
+        function vouchCurrent() {
+            alert('Vouched successfully! Moving to Status tab.');
+            switchTab(2);
+        }
+
+        function filterReports(query) {
+            const cards = document.querySelectorAll('.community-card');
+            cards.forEach(card => {
+                if(card.innerText.toLowerCase().includes(query.toLowerCase())) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

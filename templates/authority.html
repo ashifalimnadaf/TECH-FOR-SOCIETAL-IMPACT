@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeVoice | Authority Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --auth-primary: #6366f1;
+            --auth-secondary: #10b981;
+            --sidebar-bg: #ffffff;
+            --main-bg: #f8fafc;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: var(--main-bg);
+            color: #1e293b;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: var(--sidebar-bg);
+            border-right: 2px solid #f1f5f9;
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 50px 60px;
+            overflow-y: auto;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            color: #64748b;
+            text-decoration: none;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #f1f5f9;
+            color: var(--auth-primary);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: #eef2ff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 32px;
+            border: 2px solid #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: 0.4s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            border-color: #e2e8f0;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 900;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-card {
+            background: white;
+            border: 2px solid #f1f5f9;
+            border-radius: 32px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .action-btn {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 800;
+            transition: 0.3s;
+            box-shadow: 0 8px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .reg-form input {
+            background: #f8fafc;
+            border: 2px solid #f1f5f9;
+            padding: 14px;
+            border-radius: 14px;
+            color: #1e293b;
+            margin-bottom: 15px;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .reg-form input:focus {
+            outline: none;
+            border-color: var(--auth-primary);
+            background: white;
+        }
+
+        .problem-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px;
+            border-bottom: 2px solid #f1f5f9;
+            transition: 0.3s;
+        }
+
+        .problem-item:last-child { border-bottom: none; }
+
+        .problem-item:hover {
+            background: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo-img glass" style="background: var(--auth-primary); color: #fff; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-building-shield"></i>
+            </div>
+            <span class="logo-text" style="background: linear-gradient(90deg, #fff, var(--auth-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Authority</span>
+        </div>
+
+        <div class="nav-list">
+            <div class="nav-item active" onclick="showSection('overview')">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </div>
+            <div class="nav-item" onclick="showSection('registered')">
+                <i class="fas fa-list-ul"></i> Registered Issues
+            </div>
+            <div class="nav-item" onclick="showSection('actions')">
+                <i class="fas fa-check-double"></i> Actions Taken
+            </div>
+            <div class="nav-item" onclick="showSection('registration')">
+                <i class="fas fa-user-plus"></i> Authority Registration
+            </div>
+            <a href="/" class="nav-item" style="margin-top: auto; color: var(--danger)">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Overview Section -->
+        <div id="section-overview">
+            <h1 style="margin-bottom: 30px;">Overview</h1>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="text-secondary">Total Registered</span>
+                    <span class="stat-value">124</span>
+                    <span style="color: var(--auth-secondary); font-size: 0.9rem;"><i class="fas fa-arrow-up"></i> 12% this week</span>
+                </div>
+                <div class="stat-card">
+                    <span class="text-secondary">Actions Taken</span>
+                    <span class="stat-value">89</span>
+                    <span style="color: var(--auth-secondary); font-size: 0.9rem;"><i class="fas fa-check"></i> 71% resolution rate</span>
+                </div>
+                <div class="stat-card">
+                    <span class="text-secondary">Pending</span>
+                    <span class="stat-value">35</span>
+                    <span style="color: var(--danger); font-size: 0.9rem;"><i class="fas fa-exclamation-triangle"></i> Requires attention</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registered Problems -->
+        <div id="section-registered" style="display: none;">
+            <h1>Registered Problems</h1>
+            <div class="section-card">
+                <div class="problem-item">
+                    <div>
+                        <div class="id-tag">#SV-8293</div>
+                        <h3>Broken Street Light in Ward 5</h3>
+                        <p class="text-secondary">Submitted 2 hours ago • <i class="fas fa-heart" style="color: var(--accent-pink)"></i> 12 vouches</p>
+                    </div>
+                    <button class="action-btn" onclick="takeAction('#SV-8293')">Take Action</button>
+                </div>
+                <div class="problem-item">
+                    <div>
+                        <div class="id-tag">#SV-9012</div>
+                        <h3>Pothole on Main Road</h3>
+                        <p class="text-secondary">Submitted 1 day ago • <i class="fas fa-heart" style="color: var(--accent-pink)"></i> 56 vouches</p>
+                    </div>
+                    <button class="action-btn" onclick="takeAction('#SV-9012')">Take Action</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Taken -->
+        <div id="section-actions" style="display: none;">
+            <h1>Actions Taken</h1>
+            <div class="section-card">
+                <div class="problem-item">
+                    <div>
+                        <div class="id-tag">#SV-7142</div>
+                        <h3>Garbage Overflow fixed</h3>
+                        <p class="text-secondary">Resolved May 1, 2026</p>
+                    </div>
+                    <span class="badge badge-resolved">RESOLVED</span>
+                </div>
+                <div class="problem-item">
+                    <div>
+                        <div class="id-tag">#SV-7654</div>
+                        <h3>Park Bench Repaired</h3>
+                        <p class="text-secondary">Resolved Apr 28, 2026</p>
+                    </div>
+                    <span class="badge badge-resolved">RESOLVED</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authority Registration -->
+        <div id="section-registration" style="display: none;">
+            <h1>Register New Authority Account</h1>
+            <div class="section-card reg-form" style="max-width: 500px;">
+                <label>Official Name</label>
+                <input type="text" placeholder="e.g. John Doe">
+                <label>Department</label>
+                <input type="text" placeholder="e.g. Public Works">
+                <label>Official Email</label>
+                <input type="email" placeholder="e.g. john@gov.in">
+                <label>Access Code</label>
+                <input type="password" placeholder="••••••••">
+                <button class="submit-btn" onclick="alert('Authority Registered Successfully!')">Create Authority Account</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(name) {
+            // Hide all
+            ['overview', 'registered', 'actions', 'registration'].forEach(s => {
+                document.getElementById('section-' + s).style.display = 'none';
+            });
+            // Show target
+            document.getElementById('section-' + name).style.display = 'block';
+            
+            // Update sidebar active state
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.innerText.toLowerCase().includes(name)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        function takeAction(id) {
+            alert('Action initiated for ' + id + '. Status updated to IN PROGRESS.');
+            showSection('actions');
+        }
+    </script>
+</body>
+</html>
