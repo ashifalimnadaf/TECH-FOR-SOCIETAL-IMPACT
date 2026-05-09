@@ -193,65 +193,38 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <span class="text-secondary">Total Registered</span>
-                    <span class="stat-value">124</span>
-                    <span style="color: var(--auth-secondary); font-size: 0.9rem;"><i class="fas fa-arrow-up"></i> 12% this week</span>
+                    <span class="stat-value" id="stat-total">0</span>
                 </div>
                 <div class="stat-card">
                     <span class="text-secondary">Actions Taken</span>
-                    <span class="stat-value">89</span>
-                    <span style="color: var(--auth-secondary); font-size: 0.9rem;"><i class="fas fa-check"></i> 71% resolution rate</span>
+                    <span class="stat-value" id="stat-resolved">0</span>
                 </div>
                 <div class="stat-card">
                     <span class="text-secondary">Pending</span>
-                    <span class="stat-value">35</span>
-                    <span style="color: var(--danger); font-size: 0.9rem;"><i class="fas fa-exclamation-triangle"></i> Requires attention</span>
+                    <span class="stat-value" id="stat-pending">0</span>
                 </div>
             </div>
         </div>
 
         <!-- Registered Problems -->
         <div id="section-registered" style="display: none;">
-            <h1>Registered Problems</h1>
-            <div class="section-card">
-                <div class="problem-item">
-                    <div>
-                        <div class="id-tag">#SV-8293</div>
-                        <h3>Broken Street Light in Ward 5</h3>
-                        <p class="text-secondary">Submitted 2 hours ago • <i class="fas fa-heart" style="color: var(--accent-pink)"></i> 12 vouches</p>
-                    </div>
-                    <button class="action-btn" onclick="takeAction('#SV-8293')">Take Action</button>
-                </div>
-                <div class="problem-item">
-                    <div>
-                        <div class="id-tag">#SV-9012</div>
-                        <h3>Pothole on Main Road</h3>
-                        <p class="text-secondary">Submitted 1 day ago • <i class="fas fa-heart" style="color: var(--accent-pink)"></i> 56 vouches</p>
-                    </div>
-                    <button class="action-btn" onclick="takeAction('#SV-9012')">Take Action</button>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1>Registered Problems</h1>
+                <input type="text" class="search-bar" placeholder="Search problems..." style="width: 300px; padding: 10px 20px; border-radius: 15px; border: 2px solid #f1f5f9;" onkeyup="filterIssues(this.value, 'registered-list')">
+            </div>
+            <div class="section-card" id="registered-list">
+                <!-- Data loaded here -->
             </div>
         </div>
 
         <!-- Actions Taken -->
         <div id="section-actions" style="display: none;">
-            <h1>Actions Taken</h1>
-            <div class="section-card">
-                <div class="problem-item">
-                    <div>
-                        <div class="id-tag">#SV-7142</div>
-                        <h3>Garbage Overflow fixed</h3>
-                        <p class="text-secondary">Resolved May 1, 2026</p>
-                    </div>
-                    <span class="badge badge-resolved">RESOLVED</span>
-                </div>
-                <div class="problem-item">
-                    <div>
-                        <div class="id-tag">#SV-7654</div>
-                        <h3>Park Bench Repaired</h3>
-                        <p class="text-secondary">Resolved Apr 28, 2026</p>
-                    </div>
-                    <span class="badge badge-resolved">RESOLVED</span>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1>Actions Taken / Resolved</h1>
+                <input type="text" class="search-bar" placeholder="Search resolved..." style="width: 300px; padding: 10px 20px; border-radius: 15px; border: 2px solid #f1f5f9;" onkeyup="filterIssues(this.value, 'actions-list')">
+            </div>
+            <div class="section-card" id="actions-list">
+                <!-- Data loaded here -->
             </div>
         </div>
 
@@ -260,40 +233,172 @@
             <h1>Register New Authority Account</h1>
             <div class="section-card reg-form" style="max-width: 500px;">
                 <label>Official Name</label>
-                <input type="text" placeholder="e.g. John Doe">
+                <input type="text" id="reg-name" placeholder="e.g. John Doe">
                 <label>Department</label>
-                <input type="text" placeholder="e.g. Public Works">
+                <input type="text" id="reg-dept" placeholder="e.g. Public Works">
                 <label>Official Email</label>
-                <input type="email" placeholder="e.g. john@gov.in">
-                <label>Access Code</label>
-                <input type="password" placeholder="••••••••">
-                <button class="submit-btn" onclick="alert('Authority Registered Successfully!')">Create Authority Account</button>
+                <input type="email" id="reg-email" placeholder="e.g. john@gov.in">
+                <label>Password</label>
+                <input type="password" id="reg-pass" placeholder="••••••••">
+                <button class="submit-btn" onclick="registerAuthority()">Create Authority Account</button>
             </div>
         </div>
     </div>
 
+    <!-- Media Viewer Modal -->
+    <div id="media-viewer" class="modal" onclick="closeMediaViewer(event)" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; padding: 20px; border-radius: 32px; width: 90%; max-width: 800px; text-align: center; position: relative;" onclick="event.stopPropagation()">
+            <button onclick="closeMediaViewer()" style="position: absolute; top: -15px; right: -15px; background: #ef4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="viewer-content" style="width: 100%; min-height: 200px; display: flex; align-items: center; justify-content: center;"></div>
+        </div>
+    </div>
+
     <script>
+        async function loadData() {
+            const res = await fetch('/api/grievances');
+            const data = await res.json();
+            
+            // Stats
+            document.getElementById('stat-total').innerText = data.length;
+            document.getElementById('stat-resolved').innerText = data.filter(r => r.status === 'Resolved').length;
+            document.getElementById('stat-pending').innerText = data.filter(r => r.status === 'Pending').length;
+
+            const registeredList = document.getElementById('registered-list');
+            registeredList.innerHTML = data.filter(r => r.status !== 'Resolved').map(r => `
+                <div class="problem-item" style="flex-direction: column; align-items: flex-start; gap: 15px;">
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="id-tag">#${r.id}</div>
+                            <div style="display: flex; gap: 10px;">
+                                ${r.status === 'Pending' ? `<button class="action-btn" onclick="updateStatus('${r.id}', 'In Progress')">Take Action</button>` : ''}
+                                ${r.status === 'In Progress' ? `<button class="action-btn" style="background: var(--auth-secondary)" onclick="updateStatus('${r.id}', 'Resolved')">Resolve</button>` : ''}
+                            </div>
+                        </div>
+                        <h3 style="margin: 10px 0;">${r.type}</h3>
+                        <p>${r.content || '[Media Report]'}</p>
+                        
+                        ${r.transcriptions && r.transcriptions.length > 0 ? `
+                            <div style="background: #eef2ff; padding: 15px; border-radius: 12px; border-left: 4px solid var(--auth-primary); margin: 15px 0;">
+                                <p style="font-weight: 700; font-size: 0.8rem; color: var(--auth-primary); margin-bottom: 5px;"><i class="fas fa-file-alt"></i> AUDIO TRANSCRIPTION</p>
+                                <p style="font-style: italic; color: #475569;">"${r.transcriptions.join(' ')}"</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${r.media && r.media.length > 0 ? `
+                            <div style="display: flex; gap: 10px; margin: 15px 0;">
+                                ${r.media.map(m => `
+                                    <div style="width: 80px; height: 80px; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #f8fafc;" onclick="openMedia('${m.url}', '${m.type}')">
+                                        ${m.type === 'image' ? `<img src="${m.url}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                                          m.type === 'video' ? `<i class="fas fa-video"></i>` : `<i class="fas fa-microphone"></i>`}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <p class="text-secondary" style="font-size: 0.8rem; margin-top: 10px;">Submitted: ${r.timestamp} • <i class="fas fa-heart"></i> ${r.verification_count} vouches</p>
+                        <p class="text-secondary" style="font-size: 0.8rem;"><i class="fas fa-map-marker-alt"></i> ${r.location}</p>
+                    </div>
+                </div>
+            `).join('') || '<p style="text-align: center; padding: 20px;">No pending issues.</p>';
+
+            // Actions List (Resolved)
+            const actionsList = document.getElementById('actions-list');
+            actionsList.innerHTML = data.filter(r => r.status === 'Resolved').map(r => `
+                <div class="problem-item">
+                    <div>
+                        <div class="id-tag">#${r.id}</div>
+                        <h3>${r.type}</h3>
+                        <p class="text-secondary">Resolved on ${r.timestamp}</p>
+                    </div>
+                    <span class="badge badge-resolved">RESOLVED</span>
+                </div>
+            `).join('') || '<p style="text-align: center; padding: 20px;">No resolved issues yet.</p>';
+        }
+
+        function openMedia(url, type) {
+            const viewer = document.getElementById('media-viewer');
+            const content = document.getElementById('viewer-content');
+            
+            if (type === 'image') {
+                content.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 80vh; border-radius: 10px;">`;
+            } else if (type === 'video') {
+                content.innerHTML = `<video src="${url}" controls autoplay style="max-width: 100%; max-height: 80vh; border-radius: 10px;"></video>`;
+            } else if (type === 'voice') {
+                content.innerHTML = `
+                    <div style="text-align: center; width: 100%;">
+                        <i class="fas fa-microphone fa-4x" style="color: #6366f1; margin-bottom: 20px;"></i>
+                        <audio src="${url}" controls autoplay style="width: 100%;"></audio>
+                    </div>`;
+            } else {
+                window.open(url);
+                return;
+            }
+            viewer.style.display = 'flex';
+        }
+
+        function closeMediaViewer() {
+            const viewer = document.getElementById('media-viewer');
+            const content = document.getElementById('viewer-content');
+            content.innerHTML = '';
+            viewer.style.display = 'none';
+        }
+
+        async function updateStatus(id, newStatus) {
+            const res = await fetch('/api/update_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status: newStatus })
+            });
+            if (await res.json().then(d => d.success)) {
+                loadData();
+            }
+        }
+
+        async function registerAuthority() {
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-pass').value;
+            const name = document.getElementById('reg-name').value;
+            const dept = document.getElementById('reg-dept').value;
+
+            const res = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, name, dept, role: 'authority', action: 'signup' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Authority Registered Successfully!');
+            } else {
+                alert(data.message);
+            }
+        }
+
         function showSection(name) {
-            // Hide all
             ['overview', 'registered', 'actions', 'registration'].forEach(s => {
                 document.getElementById('section-' + s).style.display = 'none';
             });
-            // Show target
             document.getElementById('section-' + name).style.display = 'block';
             
-            // Update sidebar active state
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
-                if(item.innerText.toLowerCase().includes(name)) {
-                    item.classList.add('active');
-                }
+                if(item.innerText.toLowerCase().includes(name)) item.classList.add('active');
+            });
+
+            if (name !== 'registration') loadData();
+        }
+
+        function filterIssues(query, containerId) {
+            const container = document.getElementById(containerId);
+            const items = container.querySelectorAll('.problem-item');
+            items.forEach(item => {
+                item.style.display = item.innerText.toLowerCase().includes(query.toLowerCase()) ? 'flex' : 'none';
             });
         }
 
-        function takeAction(id) {
-            alert('Action initiated for ' + id + '. Status updated to IN PROGRESS.');
-            showSection('actions');
-        }
+        // Initial load
+        window.onload = () => loadData();
     </script>
 </body>
 </html>

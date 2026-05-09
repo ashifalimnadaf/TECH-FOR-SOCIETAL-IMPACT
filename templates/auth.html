@@ -331,13 +331,51 @@
             selectedRole = role;
         }
 
-        function handleAuth(type) {
-            const email = document.getElementById('login-email').value;
-            // Simple logic: if email contains 'admin', go to authority
-            if (email.includes('admin') || selectedRole === 'authority') {
-                window.location.href = '/authority';
+        async function handleAuth(type) {
+            const container = document.getElementById('container');
+            const isSignup = container.classList.contains('active');
+            
+            let email, password, name, role;
+            
+            if (isSignup) {
+                const signupForm = document.querySelector('.signup-container form');
+                name = signupForm.querySelector('input[type="text"]').value;
+                email = signupForm.querySelector('input[type="email"]').value;
+                password = signupForm.querySelector('input[type="password"]').value;
+                role = selectedRole;
             } else {
-                window.location.href = '/dashboard';
+                email = document.getElementById('login-email').value;
+                password = document.getElementById('login-password').value;
+            }
+
+            if (!email || !password) return alert('Please fill in all fields');
+
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email, 
+                        password, 
+                        name, 
+                        role, 
+                        action: isSignup ? 'signup' : 'login' 
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    if (data.role === 'authority') {
+                        window.location.href = '/authority';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    alert(data.message || 'Authentication failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred during authentication');
             }
         }
     </script>

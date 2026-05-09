@@ -2,3 +2,6 @@ flask
 uuid
 datetime
 firebase-admin
+scikit-learn
+google-cloud-speech
+google-api-python-client

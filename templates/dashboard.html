@@ -6,6 +6,9 @@
     <title>SafeVoice | Citizen Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet Map (Free Alternative to Google Maps) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --tab-bg: #f1f5f9;
@@ -84,9 +87,70 @@
         /* Tab 1: Reporting */
         .report-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .location-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f1f5f9;
+            padding: 12px 20px;
+            border-radius: 16px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s ease;
+        }
+
+        .location-info-bar i {
+            color: #6366f1;
+        }
+
+        .location-info-bar.detected {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        /* Map Modal Specifics */
+        .map-container {
+            width: 100%;
+            height: 300px;
+            border-radius: 20px;
+            margin-top: 15px;
+            overflow: hidden;
+            border: 2px solid #f1f5f9;
+        }
+
+        .map-search-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .map-search-input {
+            width: 100%;
+            padding: 12px 45px;
+            border-radius: 14px;
+            border: 2px solid #f1f5f9;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        .map-search-input:focus {
+            border-color: #6366f1;
+            outline: none;
+        }
+
+        .map-search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
         }
 
         .media-option {
@@ -267,6 +331,126 @@
             border-radius: 10px;
             font-size: 0.8rem;
         }
+
+        /* New Styles for Media and Location */
+        .media-preview-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .media-preview-item {
+            width: 100px;
+            height: 100px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .media-preview-item img, .media-preview-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-preview-item i {
+            font-size: 2rem;
+            color: #6366f1;
+        }
+
+        .remove-media {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .location-picker {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f1f5f9;
+            padding: 15px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .location-picker:hover {
+            background: #e2e8f0;
+        }
+
+        .location-picker.active {
+            background: #dcfce7;
+            border: 1px solid #22c55e;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 32px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: modalScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modalScale {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #dcfce7;
+            color: #22c55e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 20px;
+        }
+
+        .search-tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -291,7 +475,7 @@
                 <i class="fas fa-users"></i> Community Report
             </div>
             <div class="tab" onclick="switchTab(2)">
-                <i class="fas fa-tasks"></i> Report Status
+                <i class="fas fa-tasks"></i> My Reports
             </div>
         </div>
 
@@ -306,30 +490,41 @@
             </div>
 
             <div class="report-grid">
-                <div class="media-option" onclick="handleMedia('voice')">
+                <div class="media-option" onclick="startCapture('voice')">
                     <i class="fas fa-microphone"></i>
                     <p>Voice Record</p>
                 </div>
-                <div class="media-option" onclick="handleMedia('image')">
+                <div class="media-option" onclick="startCapture('image')">
                     <i class="fas fa-camera"></i>
                     <p>Capture Image</p>
                 </div>
-                <div class="media-option" onclick="handleMedia('video')">
+                <div class="media-option" onclick="startCapture('video')">
                     <i class="fas fa-video"></i>
                     <p>Record Video</p>
                 </div>
-                <div class="media-option" onclick="handleMedia('file')">
+                <div class="media-option" onclick="triggerFileInput()">
                     <i class="fas fa-file-upload"></i>
                     <p>Attach File</p>
+                    <input type="file" id="hidden-file-input" style="display: none;" onchange="handleFileSelect(this)">
+                </div>
+                <div class="media-option" id="location-btn" onclick="openLocationPicker()">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <p id="location-text">Select Location</p>
                 </div>
             </div>
 
-            <div class="glass" style="padding: 30px;">
+            <div id="media-preview" class="media-preview-container"></div>
+
+            <div class="glass" style="padding: 30px; margin-top: 20px;">
                 <h3>Describe the issue</h3>
-                <textarea id="complaint-desc" rows="6" placeholder="Type your complaint here..."></textarea>
-                <div id="vouch-suggestion" style="margin-top: 15px; display: none; background: rgba(255,0,255,0.1); padding: 15px; border-radius: 10px; border: 1px solid var(--accent-pink);">
-                    <p><i class="fas fa-lightbulb"></i> Similar issue found: <strong>"Pothole on Main St"</strong></p>
-                    <button class="vouch-btn" style="margin-top: 10px;" onclick="vouchCurrent()"><i class="fas fa-heart"></i> Vouch instead of reporting new</button>
+                <textarea id="complaint-desc" rows="6" placeholder="Type your complaint here..." oninput="debounce(checkSimilarity, 1000)()"></textarea>
+                <div id="location-info" class="location-info-bar">
+                    <i class="fas fa-location-dot"></i>
+                    <span id="detected-location-text">Detecting location...</span>
+                </div>
+                <div id="vouch-suggestion" style="margin-top: 15px; display: none; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border: 1px solid var(--accent-pink);">
+                    <p><i class="fas fa-lightbulb"></i> Similar issue found: <strong id="similar-text">"Pothole on Main St"</strong></p>
+                    <button class="vouch-btn" style="margin-top: 10px;" id="vouch-suggest-btn"><i class="fas fa-heart"></i> Vouch instead of reporting new</button>
                 </div>
                 <button class="submit-btn" style="height: 60px; font-size: 1.1rem;" onclick="submitFinalReport()">
                     <i class="fas fa-paper-plane"></i> SUBMIT COMPLAINT
@@ -341,84 +536,39 @@
         <div id="tab-community" class="tab-content">
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" class="search-bar" placeholder="Search for reports in your area..." onkeyup="filterReports(this.value)">
+                <input type="text" class="search-bar" placeholder="Search for reports in your area..." onkeyup="filterReports(this.value, 'community-list')">
             </div>
 
             <div id="community-list">
-                <!-- Sample Reports -->
-                <div class="community-card">
-                    <div class="card-header">
-                        <span class="badge badge-pending">PENDING</span>
-                        <span class="id-tag">#SV-8293</span>
-                    </div>
-                    <h3>Broken Street Light in Ward 5</h3>
-                    <p>The street light near the public park has been non-functional for 2 weeks. It's unsafe for children and elderly at night.</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.9rem; color: var(--text-secondary)"><i class="fas fa-clock"></i> 2 hours ago</span>
-                        <button class="vouch-btn" onclick="vouchReport('SV-8293', this)">
-                            <i class="fas fa-heart"></i> Vouch <span class="vouch-count">12</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="community-card">
-                    <div class="card-header">
-                        <span class="badge badge-verified">IN PROGRESS</span>
-                        <span class="id-tag">#SV-7142</span>
-                    </div>
-                    <h3>Garbage Overflow near School</h3>
-                    <p>Waste has not been collected for 4 days. Strong odor is affecting students.</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.9rem; color: var(--text-secondary)"><i class="fas fa-clock"></i> 5 hours ago</span>
-                        <button class="vouch-btn" onclick="vouchReport('SV-7142', this)">
-                            <i class="fas fa-heart"></i> Vouch <span class="vouch-count">45</span>
-                        </button>
-                    </div>
-                </div>
+                <!-- Data will be loaded here -->
+                <div class="glass" style="padding: 20px; text-align: center;">Loading community reports...</div>
             </div>
         </div>
 
         <!-- Tab 3: Report Status -->
         <div id="tab-status" class="tab-content">
-            <div class="glass" style="padding: 20px; margin-bottom: 20px;">
-                <h2>Your Submissions</h2>
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-bar" placeholder="Search your reports by ID or Title..." onkeyup="filterReports(this.value, 'status-list')">
             </div>
             
-            <table class="status-table">
-                <tr class="status-row">
-                    <td>
-                        <div class="id-tag">#SV-9012</div>
-                        <div style="font-weight: bold; margin-top: 5px;">Pothole Repair</div>
-                    </td>
-                    <td>
-                        <span class="badge badge-pending">PENDING</span>
-                        <div class="progress-bar"><div class="progress-fill" style="width: 20%;"></div></div>
-                    </td>
-                    <td><span style="color: var(--text-secondary)">Submitted May 2, 2026</span></td>
-                </tr>
-                <tr class="status-row">
-                    <td>
-                        <div class="id-tag">#SV-8821</div>
-                        <div style="font-weight: bold; margin-top: 5px;">Water Supply Leak</div>
-                    </td>
-                    <td>
-                        <span class="badge badge-verified" style="background: var(--tab-active)">IN PROGRESS</span>
-                        <div class="progress-bar"><div class="progress-fill" style="width: 65%;"></div></div>
-                    </td>
-                    <td><span style="color: var(--text-secondary)">Submitted Apr 30, 2026</span></td>
-                </tr>
-                <tr class="status-row">
-                    <td>
-                        <div class="id-tag">#SV-7654</div>
-                        <div style="font-weight: bold; margin-top: 5px;">Park Bench Broken</div>
-                    </td>
-                    <td>
-                        <span class="badge badge-resolved">RESOLVED</span>
-                        <div class="progress-bar"><div class="progress-fill" style="width: 100%; background: var(--success)"></div></div>
-                    </td>
-                    <td><span style="color: var(--text-secondary)">Resolved Apr 28, 2026</span></td>
-                </tr>
-            </table>
+            <div id="status-list">
+                <!-- Data will be loaded here -->
+                <div class="glass" style="padding: 20px; text-align: center;">Loading your reports...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 style="color: #0f172a; margin-bottom: 10px;">Report Submitted!</h2>
+            <p style="color: #64748b; margin-bottom: 25px;">Your tracking ID is:</p>
+            <div id="modal-report-id" style="font-size: 1.8rem; font-weight: 900; color: #4f46e5; background: #f5f3ff; padding: 15px; border-radius: 16px; margin-bottom: 30px; border: 2px dashed #c4b5fd;"></div>
+            <button class="submit-btn" onclick="closeModal()">VIEW STATUS</button>
         </div>
     </div>
 
@@ -427,77 +577,656 @@
         <div class="voice-btn recording" id="active-record-btn">
             <i class="fas fa-microphone fa-3x"></i>
         </div>
-        <h2 id="recording-text">Recording...</h2>
-        <p>Speak clearly. Your voice is encrypted.</p>
-        <button class="submit-btn" style="width: 200px;" onclick="stopRecording()">STOP & SAVE</button>
+        <h2 id="recording-text" style="margin-top: 20px;">Recording...</h2>
+        <p id="recording-subtext" style="margin-bottom: 25px;">Speak clearly. Your voice is encrypted.</p>
+        <video id="camera-preview" style="display: none; width: 90%; max-width: 600px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 4px solid rgba(255,255,255,0.2);" autoplay muted></video>
+        
+        <div id="live-transcript" style="margin-top: 20px; color: white; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; max-width: 80%; text-align: center; display: none; font-style: italic; border: 1px dashed rgba(255,255,255,0.3);">
+            "Start speaking to see transcription..."
+        </div>
+        
+        <div style="display: flex; gap: 20px; margin-top: 20px;">
+            <button id="cancel-btn" class="submit-btn" style="width: 150px; background: #64748b;" onclick="cancelCapture()">CANCEL</button>
+            <button id="stop-btn" class="submit-btn" style="width: 200px;" onclick="stopCapture()">STOP & SAVE</button>
+        </div>
     </div>
 
+
+    <!-- Manual Location Picker Modal -->
+    <div id="location-modal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Select Location</h2>
+                <button onclick="closeLocationModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div class="map-search-container">
+                <i class="fas fa-search map-search-icon"></i>
+                <input type="text" id="map-search" class="map-search-input" placeholder="Search for a place...">
+            </div>
+
+            <div id="map-canvas" class="map-container">
+                <!-- Map will be loaded here -->
+                <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #f8fafc; color: #64748b;">
+                    <p><i class="fas fa-map-pin"></i> Click to drop a pin</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="submit-btn" style="margin-top: 0; background: #64748b;" onclick="closeLocationModal()">CANCEL</button>
+                <button class="submit-btn" style="margin-top: 0;" onclick="confirmLocation()">SET LOCATION</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similarity Detail Modal -->
+    <div id="similarity-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: var(--accent-pink); margin: 0;"><i class="fas fa-clone"></i> Similar Issue Found</h2>
+                <button onclick="closeSimilarityModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div id="similarity-details" style="background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+                <!-- Content will be injected -->
+            </div>
+
+            <div style="background: #fff5f7; padding: 20px; border-radius: 20px; border: 1px solid #fce7f3; margin-bottom: 25px;">
+                <p style="color: #be185d; font-weight: 600; margin-bottom: 5px;">Why vouch instead of reporting?</p>
+                <p style="font-size: 0.9rem; color: #db2777;">Authorities prioritize issues with more vouches. By joining this report, you help move it up the priority list faster!</p>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <button class="submit-btn" style="margin-top: 0; background: #64748b;" onclick="closeSimilarityModal()">FILE NEW ANYWAY</button>
+                <button class="submit-btn" style="margin-top: 0; background: var(--accent-pink);" id="vouch-same-problem-btn">
+                    <i class="fas fa-heart"></i> THEY ARE FACING THE SAME PROBLEM
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Viewer Modal -->
+    <div id="media-viewer" class="modal" onclick="closeMediaViewer(event)">
+        <div class="modal-content" style="max-width: 600px; padding: 20px; position: relative;" onclick="event.stopPropagation()">
+            <button onclick="closeMediaViewer()" style="position: absolute; top: -15px; right: -15px; background: #ef4444; width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="viewer-content" style="width: 100%; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                <!-- Media will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
     <script>
+        let mediaChunks = [];
+        let mediaRecorder;
+        let captureType = '';
+        let attachedMedia = [];
+        let userLocation = 'Unknown';
+        let transcriptions = [];
+        let currentSimilarId = null;
+        let recognition;
+        let finalTranscript = '';
+
+        // Debounce helper
+        function debounce(func, timeout = 300) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        // Tab Switching
         function switchTab(index) {
             const tabs = document.querySelectorAll('.tab');
             const contents = document.querySelectorAll('.tab-content');
-            
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
-            
             tabs[index].classList.add('active');
             contents[index].classList.add('active');
-        }
-
-        function handleMedia(type) {
-            if(type === 'voice') {
-                document.getElementById('recording-overlay').style.display = 'flex';
-            } else {
-                alert('Opening ' + type + ' interface...');
-            }
-        }
-
-        function stopRecording() {
-            document.getElementById('recording-overlay').style.display = 'none';
-            document.getElementById('complaint-desc').value = "[Audio Recording Attached]";
-        }
-
-        function vouchReport(id, btn) {
-            const countEl = btn.querySelector('.vouch-count');
-            let count = parseInt(countEl.innerText);
-            countEl.innerText = count + 1;
-            btn.style.opacity = '0.7';
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-check"></i> Vouched';
-        }
-
-        function submitFinalReport() {
-            const desc = document.getElementById('complaint-desc').value;
-            if(!desc) return alert('Please provide some details or media');
             
-            alert('Grievance Submitted Successfully! \nYour tracking ID: #SV-' + Math.floor(1000 + Math.random() * 9000));
-            switchTab(2);
+            if (index === 1) loadCommunityReports();
+            if (index === 2) loadStatusReports();
         }
 
-        // Simulating search and vouch suggestion
-        document.getElementById('complaint-desc').addEventListener('input', function(e) {
-            if(e.target.value.toLowerCase().includes('pothole')) {
-                document.getElementById('vouch-suggestion').style.display = 'block';
-            } else {
-                document.getElementById('vouch-suggestion').style.display = 'none';
-            }
-        });
+        // Media Capture Logic
+        async function startCapture(type) {
+            captureType = type;
+            const overlay = document.getElementById('recording-overlay');
+            const micIcon = document.getElementById('active-record-btn');
+            const text = document.getElementById('recording-text');
+            const subtext = document.getElementById('recording-subtext');
+            const video = document.getElementById('camera-preview');
+            const stopBtn = document.getElementById('stop-btn');
 
-        function vouchCurrent() {
-            alert('Vouched successfully! Moving to Status tab.');
-            switchTab(2);
-        }
+            overlay.style.display = 'flex';
+            video.style.display = 'none';
+            micIcon.style.display = 'flex'; // Default show
+            mediaChunks = [];
 
-        function filterReports(query) {
-            const cards = document.querySelectorAll('.community-card');
-            cards.forEach(card => {
-                if(card.innerText.toLowerCase().includes(query.toLowerCase())) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
+            try {
+                if (type === 'voice') {
+                    text.innerText = "Recording Audio...";
+                    subtext.innerText = "Recording your voice for evidence.";
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => mediaChunks.push(e.data);
+                    mediaRecorder.start();
+
+                    // Web Speech API Integration (Free Google Web API)
+                    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                        recognition = new SpeechRecognition();
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
+                        recognition.lang = 'en-IN'; // Supporting Indian context
+
+                        const transcriptDiv = document.getElementById('live-transcript');
+                        transcriptDiv.style.display = 'block';
+                        transcriptDiv.innerText = "Listening...";
+                        finalTranscript = '';
+
+                        recognition.onresult = (event) => {
+                            let interimTranscript = '';
+                            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                                if (event.results[i].isFinal) {
+                                    finalTranscript += event.results[i][0].transcript;
+                                } else {
+                                    interimTranscript += event.results[i][0].transcript;
+                                }
+                            }
+                            transcriptDiv.innerText = finalTranscript + interimTranscript;
+                        };
+
+                        recognition.start();
+                    }
+                } else if (type === 'video') {
+                    micIcon.style.display = 'none'; // Hide mic for video
+                    text.innerText = "Recording Video...";
+                    subtext.innerText = "Capturing visual evidence.";
+                    video.style.display = 'block';
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                    video.srcObject = stream;
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => mediaChunks.push(e.data);
+                    mediaRecorder.start();
+                } else if (type === 'image') {
+                    micIcon.style.display = 'none'; // Hide mic for image
+                    text.innerText = "Capture Image";
+                    subtext.innerText = "Align your camera and click CAPTURE.";
+                    video.style.display = 'block';
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+                    stopBtn.innerText = "CAPTURE";
                 }
+            } catch (err) {
+                console.error(err);
+                alert("Permission denied or device not found.");
+                overlay.style.display = 'none';
+            }
+        }
+
+        function cancelCapture() {
+            const overlay = document.getElementById('recording-overlay');
+            const video = document.getElementById('camera-preview');
+            const stopBtn = document.getElementById('stop-btn');
+
+            // Stop media recorder if active
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            }
+
+            // Stop camera stream if active
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+                video.srcObject = null;
+            }
+
+            if (recognition) {
+                recognition.stop();
+            }
+
+            overlay.style.display = 'none';
+            stopBtn.innerText = "STOP & SAVE";
+            mediaChunks = [];
+        }
+
+        async function stopCapture() {
+            const overlay = document.getElementById('recording-overlay');
+            const video = document.getElementById('camera-preview');
+            const stopBtn = document.getElementById('stop-btn');
+
+            if (captureType === 'image') {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg'));
+                await uploadAndPreview(blob, 'image.jpg', 'image');
+                video.srcObject.getTracks().forEach(t => t.stop());
+            } else {
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(mediaChunks, { type: captureType === 'voice' ? 'audio/webm' : 'video/webm' });
+                    
+                    if (captureType === 'voice' && finalTranscript) {
+                        // Automatically add the transcript to the description
+                        const desc = document.getElementById('complaint-desc');
+                        if (desc.value) desc.value += "\n\n";
+                        desc.value += "[Transcribed]: " + finalTranscript;
+                        transcriptions.push(finalTranscript);
+                    }
+                    
+                    await uploadAndPreview(blob, captureType === 'voice' ? 'voice.webm' : 'video.webm', captureType);
+                    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                };
+                mediaRecorder.stop();
+                if (recognition) recognition.stop();
+            }
+
+            overlay.style.display = 'none';
+            stopBtn.innerText = "STOP & SAVE";
+        }
+
+        function triggerFileInput() {
+            document.getElementById('hidden-file-input').click();
+        }
+
+        async function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                let type = 'file';
+                if (file.type.startsWith('image/')) type = 'image';
+                if (file.type.startsWith('video/')) type = 'video';
+                if (file.type.startsWith('audio/')) type = 'voice';
+                await uploadAndPreview(file, file.name, type);
+            }
+        }
+
+        async function uploadAndPreview(blob, filename, type) {
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    attachedMedia.push({ type, url: data.url });
+                    if (data.transcript) transcriptions.push(data.transcript);
+                    renderPreviews();
+                }
+            } catch (err) {
+                alert("Upload failed.");
+            }
+        }
+
+        function renderPreviews() {
+            const container = document.getElementById('media-preview');
+            container.innerHTML = attachedMedia.map((m, i) => `
+                <div class="media-preview-item" onclick="openMedia('${m.url}', '${m.type}')">
+                    ${m.type === 'image' ? `<img src="${m.url}">` : 
+                      m.type === 'video' ? `<i class="fas fa-video"></i>` : 
+                      `<i class="fas ${m.type === 'voice' ? 'fa-microphone' : 'fa-file'}"></i>`}
+                    <button class="remove-media" onclick="event.stopPropagation(); removeMedia(${i})">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        function removeMedia(index) {
+            attachedMedia.splice(index, 1);
+            renderPreviews();
+        }
+
+        // Media Viewer Logic
+        function openMedia(url, type) {
+            const viewer = document.getElementById('media-viewer');
+            const content = document.getElementById('viewer-content');
+            
+            if (type === 'image') {
+                content.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 80vh; border-radius: 10px;">`;
+            } else if (type === 'video') {
+                content.innerHTML = `<video src="${url}" controls autoplay style="max-width: 100%; max-height: 80vh; border-radius: 10px;"></video>`;
+            } else if (type === 'voice') {
+                content.innerHTML = `
+                    <div style="text-align: center; width: 100%;">
+                        <i class="fas fa-microphone fa-4x" style="color: #6366f1; margin-bottom: 20px;"></i>
+                        <audio src="${url}" controls autoplay style="width: 100%;"></audio>
+                    </div>`;
+            } else {
+                window.open(url);
+                return;
+            }
+            viewer.style.display = 'flex';
+        }
+
+        function closeMediaViewer() {
+            const viewer = document.getElementById('media-viewer');
+            const content = document.getElementById('viewer-content');
+            content.innerHTML = '';
+            viewer.style.display = 'none';
+        }
+
+        // Enhanced Location Logic
+        let map, marker, autocomplete;
+        let selectedLat, selectedLng;
+
+        window.onload = function() {
+            autoDetectLocation();
+        };
+
+        function autoDetectLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    updateLocationDisplay(pos.coords.latitude, pos.coords.longitude, "Auto-detected");
+                }, err => {
+                    document.getElementById('detected-location-text').innerText = "Location access denied. Please select manually.";
+                });
+            }
+        }
+
+        async function updateLocationDisplay(lat, lng, label) {
+            userLocation = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            selectedLat = lat;
+            selectedLng = lng;
+            const display = document.getElementById('location-info');
+            const text = document.getElementById('detected-location-text');
+            
+            text.innerText = "Fetching address...";
+            display.classList.add('detected');
+
+            // Reverse Geocoding using Nominatim
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await res.json();
+                const address = data.display_name || userLocation;
+                text.innerText = `${label}: ${address}`;
+                // Keep the detailed location for submission
+                userLocation = address; 
+                checkSimilarity(); // Check similarity after location is set
+            } catch (err) {
+                text.innerText = `${label}: ${userLocation}`;
+            }
+            
+            // Update button text too
+            document.getElementById('location-text').innerText = "Location Set";
+            document.getElementById('location-btn').classList.add('active');
+        }
+
+        function openLocationPicker() {
+            document.getElementById('location-modal').style.display = 'flex';
+            if (!map) {
+                initMap();
+            } else {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            }
+        }
+
+        function closeLocationModal() {
+            document.getElementById('location-modal').style.display = 'none';
+        }
+
+        function initMap() {
+            const defaultPos = [12.9716, 77.5946]; // Bangalore
+            const initialPos = selectedLat ? [selectedLat, selectedLng] : defaultPos;
+
+            // Initialize Leaflet Map
+            map = L.map('map-canvas').setView(initialPos, 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            marker = L.marker(initialPos, { draggable: true }).addTo(map);
+
+            // Map click to move marker
+            map.on('click', (e) => {
+                const { lat, lng } = e.latlng;
+                marker.setLatLng([lat, lng]);
+                selectedLat = lat;
+                selectedLng = lng;
+            });
+
+            // Marker drag end
+            marker.on('dragend', (e) => {
+                const { lat, lng } = e.target.getLatLng();
+                selectedLat = lat;
+                selectedLng = lng;
+            });
+
+            // Search Functionality using Nominatim (Free)
+            const searchInput = document.getElementById('map-search');
+            let timeout = null;
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    const query = searchInput.value;
+                    if (query.length < 3) return;
+
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.length > 0) {
+                                const { lat, lon } = data[0];
+                                const newPos = [parseFloat(lat), parseFloat(lon)];
+                                map.setView(newPos, 15);
+                                marker.setLatLng(newPos);
+                                selectedLat = parseFloat(lat);
+                                selectedLng = parseFloat(lon);
+                            }
+                        });
+                }, 500);
             });
         }
+
+        function confirmLocation() {
+            if (selectedLat && selectedLng) {
+                updateLocationDisplay(selectedLat, selectedLng, "Selected Location");
+                closeLocationModal();
+            }
+        }
+
+        // Submission Logic
+        async function submitFinalReport() {
+            const content = document.getElementById('complaint-desc').value;
+            if (!content && attachedMedia.length === 0) return alert("Please provide details or media.");
+
+            const payload = {
+                content,
+                media: attachedMedia,
+                location: userLocation,
+                type: content.toLowerCase().includes('water') ? 'Water Issue' : 
+                      content.toLowerCase().includes('road') ? 'Road/Infrastructure' : 'General',
+                transcriptions: transcriptions
+            };
+
+            try {
+                const res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('modal-report-id').innerText = data.id;
+                    document.getElementById('success-modal').style.display = 'flex';
+                    // Reset form
+                    document.getElementById('complaint-desc').value = '';
+                    attachedMedia = [];
+                    transcriptions = [];
+                    renderPreviews();
+                }
+            } catch (err) {
+                alert("Submission failed.");
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('success-modal').style.display = 'none';
+            switchTab(2);
+        }
+
+        // Data Loading Logic
+        async function loadCommunityReports() {
+            const res = await fetch('/api/grievances');
+            const reports = await res.json();
+            const list = document.getElementById('community-list');
+            list.innerHTML = reports.map(r => `
+                <div class="community-card">
+                    <div class="card-header">
+                        <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span>
+                        <span class="id-tag">#${r.id}</span>
+                    </div>
+                    <h2 style="color: var(--accent-color); margin-bottom: 5px;">${r.headline || 'ISSUE'}</h2>
+                    <p>${r.content || '[Media Report]'}</p>
+                    ${r.media.length > 0 ? `
+                        <div class="media-preview-container">
+                            ${r.media.map(m => `
+                                <div class="media-preview-item" onclick="openMedia('${m.url}', '${m.type}')">
+                                    ${m.type === 'image' ? `<img src="${m.url}">` : 
+                                      m.type === 'video' ? `<i class="fas fa-video"></i>` : 
+                                      `<i class="fas ${m.type === 'voice' ? 'fa-microphone' : 'fa-file'}"></i>`}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                        <span style="font-size: 0.8rem; color: #64748b;"><i class="fas fa-map-marker-alt"></i> ${r.location}</span>
+                        <button class="vouch-btn" onclick="vouchReport('${r.id}', this)">
+                            <i class="fas fa-heart"></i> Vouch <span class="vouch-count">${r.verification_count}</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadStatusReports() {
+            const res = await fetch('/api/grievances');
+            const reports = await res.json();
+            const list = document.getElementById('status-list');
+            list.innerHTML = reports.map(r => `
+                <div class="community-card">
+                    <div class="card-header">
+                        <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span>
+                        <span class="id-tag">#${r.id}</span>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="progress-bar" style="flex-grow: 1;">
+                            <div class="progress-fill" style="width: ${r.status === 'Pending' ? '20' : r.status === 'In Progress' ? '60' : '100'}%;"></div>
+                        </div>
+                        <span style="font-weight: 700; color: #64748b; font-size: 0.9rem;">${r.status === 'Pending' ? 'Received' : r.status === 'In Progress' ? 'Working' : 'Solved'}</span>
+                    </div>
+                    <h3 style="margin-top: 10px;">${r.type}</h3>
+                    <p>${r.content || '[Media Report]'}</p>
+                    <div style="font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-clock"></i> ${r.timestamp}</span>
+                        <span><i class="fas fa-heart"></i> ${r.verification_count} Vouches</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function vouchReport(id, btn) {
+            const res = await fetch('/api/vouch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (await res.json().then(d => d.success)) {
+                const countEl = btn.querySelector('.vouch-count');
+                countEl.innerText = parseInt(countEl.innerText) + 1;
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+        }
+
+        function filterReports(query, containerId) {
+            const container = document.getElementById(containerId);
+            const items = container.querySelectorAll('.community-card, .status-row');
+            items.forEach(item => {
+                item.style.display = item.innerText.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        // Similarity Agent Frontend Logic
+        async function checkSimilarity() {
+            const content = document.getElementById('complaint-desc').value;
+            if (content.length < 15) {
+                document.getElementById('vouch-suggestion').style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/check_similarity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, location: userLocation })
+                });
+                const data = await res.json();
+                
+                if (data.success && data.similar) {
+                    currentSimilarId = data.similar.id;
+                    
+                    // Show inline suggestion
+                    document.getElementById('similar-text').innerText = `"${data.similar.content.substring(0, 50)}..."`;
+                    document.getElementById('vouch-suggestion').style.display = 'block';
+                    document.getElementById('vouch-suggest-btn').onclick = () => showSimilarityModal(data.similar);
+                    
+                    // Automatically show modal for high similarity
+                    if (data.similar.similarity > 0.6) {
+                        showSimilarityModal(data.similar);
+                    }
+                } else {
+                    document.getElementById('vouch-suggestion').style.display = 'none';
+                }
+            } catch (err) {
+                console.error("Similarity check failed", err);
+            }
+        }
+
+        function showSimilarityModal(similar) {
+            const details = document.getElementById('similarity-details');
+            details.innerHTML = `
+                <div class="badge badge-verified" style="margin-bottom: 15px;">#${similar.id} - ${similar.type}</div>
+                <h3 style="margin-bottom: 10px;">Issue Details:</h3>
+                <p style="font-style: italic; color: #475569; margin-bottom: 15px;">"${similar.content}"</p>
+                <div style="font-size: 0.9rem; color: #64748b;">
+                    <p><i class="fas fa-map-marker-alt"></i> ${similar.location}</p>
+                    <p><i class="fas fa-calendar-alt"></i> Filed on: ${similar.timestamp}</p>
+                </div>
+            `;
+            document.getElementById('vouch-same-problem-btn').onclick = () => vouchCurrent(similar.id);
+            document.getElementById('similarity-modal').style.display = 'flex';
+        }
+
+        function closeSimilarityModal() {
+            document.getElementById('similarity-modal').style.display = 'none';
+        }
+
+        async function vouchCurrent(id) {
+            const res = await fetch('/api/vouch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Thank you! You have vouched for this existing issue. This helps authorities prioritize it.");
+                document.getElementById('complaint-desc').value = '';
+                document.getElementById('vouch-suggestion').style.display = 'none';
+                closeSimilarityModal();
+                switchTab(1); // Go to community reports
+            }
+        }
+        // Initial Load
+        window.onload = () => {
+            loadCommunityReports();
+            loadStatusReports();
+        };
     </script>
 </body>
 </html>
